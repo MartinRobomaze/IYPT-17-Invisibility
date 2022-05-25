@@ -14,28 +14,62 @@ crop_coords = {
 }
 
 bg_coords = {
-    '10cm': (1418, 1800),
-    '15cm': (1430, 1784),
-    '20cm': (1437, 1785),
-    '30cm': (1402, 1735),
-    '40cm': (1400, 1686),
-    '50cm': (1395, 1599),
-    '60cm': (1389, 1455),
+    '10cm': (1441, 2084),
+    '15cm': (1438, 2102),
+    '20cm': (1459, 2134),
+    '30cm': (1405, 2097),
+    '40cm': (1422, 2130),
+    '50cm': (1416, 2100),
+    '60cm': (1363, 2119),
 }
+
+
+def color_diff(color1, color2):
+    dR = (color1[0] - color2[0]) / 255
+    dG = (color1[1] - color2[1]) / 255
+    dB = (color1[2] - color2[2]) / 255
+
+    return np.sqrt(dR**2 + dG**2 + dB**2)
 
 
 def process_image(im_filename, dist):
     img = cv2.imread(im_filename)
 
-    return np.mean(cv2.Canny(img, 50, 200))
+    bg_kernel_size = (11, 11)
 
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    bg_color = [0, 0, 0]
+
+    sum = [0, 0, 0]
+
+    for x in range(bg_coords[dist][0] - bg_kernel_size[0] // 2, bg_coords[dist][0] + bg_kernel_size[0] // 2 + 1):
+        for y in range(bg_coords[dist][1] - bg_kernel_size[1] // 2, bg_coords[dist][1] + bg_kernel_size[1] // 2 + 1):
+            sum[0] += img[x, y][0]
+            sum[1] += img[x, y][1]
+            sum[2] += img[x, y][2]
+
+    bg_color[0] = sum[0] / (bg_kernel_size[0] * bg_kernel_size[1])
+    bg_color[1] = sum[1] / (bg_kernel_size[0] * bg_kernel_size[1])
+    bg_color[2] = sum[2] / (bg_kernel_size[0] * bg_kernel_size[1])
 
     img = img[crop_coords[dist][0][1]:crop_coords[dist][1][1], crop_coords[dist][0][0]:crop_coords[dist][1][0]]
+    bg_threshold = 0.18
 
-    blur = cv2.Laplacian(img, cv2.CV_64F).var()
+    diff = []
 
-    return blur
+    for x in range(len(img)):
+        for y in range(len(img[x])):
+            diff_xy = color_diff(img[x, y], bg_color)
+            if diff_xy > bg_threshold:
+                diff.append(diff_xy)
+
+    diff = np.array(diff)
+
+    try:
+        idx = np.argpartition(diff, -25)[-25:]
+    except ValueError:
+        return 0
+
+    return np.average(diff[idx])
 
 
 data_path = 'data/photos'

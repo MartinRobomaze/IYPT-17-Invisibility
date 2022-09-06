@@ -8,10 +8,18 @@ crop_coords = {
     '15cm': ((1103, 2181), (1103 + 700, 2181 + 290)),
     '20cm': ((1092, 2200), (1092 + 734, 2200 + 288)),
     '30cm': ((1001, 2198), (1001 + 844, 2198 + 282)),
-    '40cm': ((940, 2216), (940 + 992, 2216 + 284)),
-    '50cm': ((794, 2226), (794 + 1250, 2226 + 284)),
+    '40cm': ((967, 2097), (967 + 948, 2097 + 393)),
+    '50cm': ((836, 2097), (836 + 1184, 2097 + 377)),
     '60cm': ((622, 2220), (622 + 1626, 2220 + 298)),
 }
+
+# crop_coords = {
+#     '20cm': ((1065, 1793), (1065 + 749, 1793 + 285)),
+#     '30cm': ((1014, 2126), (1014 + 872, 2126 + 300)),
+#     '40cm': ((918, 2128), (918 + 1014, 2128 + 284)),
+#     '50cm': ((825, 2129), (825 + 1245, 2129 + 283)),
+#     '60cm': ((660, 2132), (660 + 1584, 2132 + 286)),
+# }
 
 bg_coords = {
     '10cm': (1441, 2084),
@@ -22,6 +30,14 @@ bg_coords = {
     '50cm': (1416, 2100),
     '60cm': (1363, 2119),
 }
+
+# bg_coords = {
+#     '20cm': (1467, 2010),
+#     '30cm': (1424, 1988),
+#     '40cm': (1425, 2077),
+#     '50cm': (1472, 2007),
+#     '60cm': (1448, 2031),
+# }
 
 
 def color_diff(color1, color2):
@@ -69,7 +85,10 @@ def process_image(im_filename, dist):
     except ValueError:
         return 0
 
-    return np.average(diff[idx])
+    average_diff = np.average(diff[idx])
+    err = np.sum(np.abs(diff[idx] - average_diff)) / 25
+
+    return np.average(diff[idx]), err
 
 
 data_path = 'data/photos'
@@ -90,13 +109,15 @@ for distance in os.listdir(data_path):
         for orientation in os.listdir(curr_dir):
             curr_dir = '{}/{}/{}/{}'.format(data_path, distance, sheet_idx, orientation)
             data_file[distance][sheet_idx].create_group(orientation)
-            data_file[distance][sheet_idx][orientation].create_dataset('blur', len(box_sizes))
+            data_file[distance][sheet_idx][orientation].create_dataset('color_diff', len(box_sizes))
+            data_file[distance][sheet_idx][orientation].create_dataset('error', len(box_sizes))
 
             for i, img_filename in enumerate(os.listdir(curr_dir)):
-                var = process_image(curr_dir + '/' + img_filename, distance)
+                var, err = process_image(curr_dir + '/' + img_filename, distance)
 
-                data_file[distance][sheet_idx][orientation]['blur'][i] = var
+                data_file[distance][sheet_idx][orientation]['color_diff'][i] = var
+                data_file[distance][sheet_idx][orientation]['error'][i] = err
 
-                print(data_file[distance][sheet_idx][orientation]['blur'][i], img_filename)
+                print(data_file[distance][sheet_idx][orientation]['color_diff'][i], img_filename)
 
 data_file.close()

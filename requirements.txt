@@ -1,0 +1,17 @@
+docutils~=0.17.1
+Sphinx~=4.5.0
+pyoptools~=0.1.1
+pep8~=1.7.1
+pythreejs~=2.3.0
+numpy~=1.22.3
+matplotlib~=3.5.2
+six~=1.16.0
+Pillow~=9.1.0
+Mako~=1.2.0
+scipy~=1.8.0
+PyYAML~=6.0
+sympy~=1.10.1
+setuptools~=62.1.0
+Cython~=0.29.28
+opencv-python~=4.5.5.64
+h5py~=3.6.0
